@@ -56,7 +56,7 @@ class JiraUserPasswordOverridingDatabase internal constructor(
         fun jiraDatabaseSchemaName(jiraDatabaseSchemaName: String) =
             apply { this.jiraDatabaseSchemaName = jiraDatabaseSchemaName }
         fun passwordEncryption(passwordEncryption: Function<String, String>) =
-            apply { this.passwordEncryption = passwordEncryption}
+            apply { this.passwordEncryption = passwordEncryption }
 
         fun build() = JiraUserPasswordOverridingDatabase(
             databaseDelegate = databaseDelegate,
@@ -74,17 +74,12 @@ class JiraUserPasswordOverridingDatabase internal constructor(
  * @param passwordEncryption Based on [retrieving-the-jira-administrator](https://confluence.atlassian.com/jira/retrieving-the-jira-administrator-192836.html)
  * to encode the password in Jira format use [com.atlassian.crowd.password.encoder.AtlassianSecurityPasswordEncoder](https://docs.atlassian.com/atlassian-crowd/4.2.2/com/atlassian/crowd/password/encoder/AtlassianSecurityPasswordEncoder.html)
  * from the [com.atlassian.crowd.crowd-password-encoders](https://mvnrepository.com/artifact/com.atlassian.crowd/crowd-password-encoders/4.2.2).
- *
  */
-fun Database.withAdminPassword(adminPasswordPlainText: String, passwordEncryption: Function<String, String>): Database {
-    val jiraDatabaseSchemaName = "jiradb"
-    val sqlClient = SshMysqlClient()
-    return JiraUserPasswordOverridingDatabase.Builder(
-        databaseDelegate = this,
-        userPasswordPlainText = adminPasswordPlainText,
-        passwordEncryption = passwordEncryption
-    )
-        .jiraDatabaseSchemaName(jiraDatabaseSchemaName)
-        .sqlClient(sqlClient)
-        .build()
-}
+fun Database.overridePassword(
+    adminPasswordPlainText: String,
+    passwordEncryption: Function<String, String>
+): JiraUserPasswordOverridingDatabase.Builder = JiraUserPasswordOverridingDatabase.Builder(
+    databaseDelegate = this,
+    userPasswordPlainText = adminPasswordPlainText,
+    passwordEncryption = passwordEncryption
+)
