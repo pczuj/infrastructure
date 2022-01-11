@@ -30,7 +30,7 @@ class JiraUserPasswordOverridingDatabaseTest {
         database = underlyingDatabase.overridePassword(Function { expectedEncryptedPassword })
             .plainTextPassword(samplePassword)
             .sqlClient(sqlClient)
-            .jiraDatabaseSchemaName("jira")
+            .schema("jira")
             .build()
         sqlClient.queueReturnedSqlCommandResult(
             SshConnection.SshResult(

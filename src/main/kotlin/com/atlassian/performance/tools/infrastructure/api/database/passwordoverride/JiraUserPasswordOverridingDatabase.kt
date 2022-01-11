@@ -9,13 +9,13 @@ import org.apache.logging.log4j.Logger
 import java.net.URI
 import java.util.function.Function
 
-class JiraUserPasswordOverridingDatabase internal constructor(
+class JiraUserPasswordOverridingDatabase private constructor(
     private val databaseDelegate: Database,
-    private val sqlClient: SshSqlClient,
     private val username: String,
-    private val jiraDatabaseSchemaName: String,
     private val plainTextPassword: String,
-    private val passwordEncryption: Function<String, String>
+    private val passwordEncryption: Function<String, String>,
+    private val sqlClient: SshSqlClient,
+    private val schema: String
 ) : Database {
     private val logger: Logger = LogManager.getLogger(this::class.java)
 
@@ -26,7 +26,7 @@ class JiraUserPasswordOverridingDatabase internal constructor(
         ssh: SshConnection
     ) {
         databaseDelegate.start(jira, ssh)
-        val methodSelect = "SELECT attribute_value FROM $jiraDatabaseSchemaName.cwd_directory_attribute" +
+        val methodSelect = "SELECT attribute_value FROM $schema.cwd_directory_attribute" +
             " WHERE attribute_name = 'user_encryption_method';"
         val encryptionMethod = sqlClient.runSql(ssh, methodSelect).output
         val password = when {
@@ -34,7 +34,7 @@ class JiraUserPasswordOverridingDatabase internal constructor(
             encryptionMethod.contains("atlassian-security") -> passwordEncryption.apply(plainTextPassword)
             else -> throw RuntimeException("Unknown jira user password encryption type")
         }
-        val passwordUpdate = "UPDATE $jiraDatabaseSchemaName.cwd_user SET credential='$password'" +
+        val passwordUpdate = "UPDATE $schema.cwd_user SET credential='$password'" +
             " WHERE user_name='$username';"
         sqlClient.runSql(ssh, passwordUpdate)
         logger.debug("Password for user '$username' updated to '$plainTextPassword'")
@@ -45,7 +45,7 @@ class JiraUserPasswordOverridingDatabase internal constructor(
         private var passwordEncryption: Function<String, String>
     ) {
         private var sqlClient: SshSqlClient = SshMysqlClient()
-        private var jiraDatabaseSchemaName: String = "jiradb"
+        private var schema: String = "jiradb"
         private var username: String = "admin"
         private var plainTextPassword: String = "admin"
 
@@ -53,8 +53,7 @@ class JiraUserPasswordOverridingDatabase internal constructor(
         fun username(username: String) = apply { this.username = username }
         fun plainTextPassword(passwordPlainText: String) = apply { this.plainTextPassword = passwordPlainText }
         fun sqlClient(sqlClient: SshSqlClient) = apply { this.sqlClient = sqlClient }
-        fun jiraDatabaseSchemaName(jiraDatabaseSchemaName: String) =
-            apply { this.jiraDatabaseSchemaName = jiraDatabaseSchemaName }
+        fun schema(jiraDatabaseSchemaName: String) = apply { this.schema = jiraDatabaseSchemaName }
         fun passwordEncryption(passwordEncryption: Function<String, String>) =
             apply { this.passwordEncryption = passwordEncryption }
 
@@ -64,7 +63,7 @@ class JiraUserPasswordOverridingDatabase internal constructor(
             username = username,
             plainTextPassword = plainTextPassword,
             passwordEncryption = passwordEncryption,
-            jiraDatabaseSchemaName = jiraDatabaseSchemaName
+            schema = schema
         )
     }
 
