@@ -1,7 +1,6 @@
 package com.atlassian.performance.tools.infrastructure.api.database.passwordoverride
 
 import com.atlassian.performance.tools.infrastructure.api.database.Database
-import com.atlassian.performance.tools.infrastructure.database.SshSqlClient
 import com.atlassian.performance.tools.infrastructure.mock.MockSshSqlClient
 import com.atlassian.performance.tools.infrastructure.mock.RememberingDatabase
 import com.atlassian.performance.tools.infrastructure.mock.RememberingSshConnection
@@ -10,6 +9,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
 import java.net.URI
+import java.util.function.Function
 
 class JiraUserPasswordOverridingDatabaseTest {
 
@@ -31,17 +31,18 @@ class JiraUserPasswordOverridingDatabaseTest {
             .Builder(
                 databaseDelegate = underlyingDatabase,
                 userPasswordPlainText = samplePassword,
-                userPasswordEncryptorProvider = object : JiraUserPasswordEncryptorProvider {
-                    override fun getEncryptor(ssh: SshConnection, sqlClient: SshSqlClient): JiraUserPasswordEncryptor {
-                        return object : JiraUserPasswordEncryptor {
-                            override fun getEncryptedPassword(plainTextPassword: String) = expectedEncryptedPassword
-                        }
-                    }
-                }
+                passwordEncryption = Function { expectedEncryptedPassword }
             )
             .sqlClient(sqlClient)
             .jiraDatabaseSchemaName("jira")
             .build()
+        sqlClient.queueReturnedSqlCommandResult(
+            SshConnection.SshResult(
+                exitStatus = 0,
+                output = "atlassian-security",
+                errorOutput = ""
+            )
+        )
     }
 
     @Test
@@ -74,7 +75,7 @@ class JiraUserPasswordOverridingDatabaseTest {
         // then
         assertThat(sqlClient.getLog())
             .`as`("sql queries executed")
-            .containsExactly(
+            .contains(
                 "UPDATE jira.cwd_user SET credential='${expectedEncryptedPassword}' WHERE user_name='admin';"
             )
     }
