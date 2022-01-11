@@ -27,6 +27,7 @@ Dropping a requirement of a major version of a dependency is a new contract.
 [Unreleased]: https://github.com/atlassian/infrastructure/compare/release-4.18.0...master
 ### Added
 - `JiraUserPasswordOverridingDatabase` to support providing custom admin password during database setup [JPERF-729]
+- Add static `Database.overridePassword` (a Kotlin extension).
 
 [JPERF-729]: https://ecosystem.atlassian.net/browse/JPERF-729
 
