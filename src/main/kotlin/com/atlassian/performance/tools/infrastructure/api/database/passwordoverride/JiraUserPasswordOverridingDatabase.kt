@@ -42,16 +42,16 @@ class JiraUserPasswordOverridingDatabase internal constructor(
 
     class Builder(
         private var databaseDelegate: Database,
-        private var userPasswordPlainText: String,
         private var passwordEncryption: Function<String, String>
     ) {
         private var sqlClient: SshSqlClient = SshMysqlClient()
         private var jiraDatabaseSchemaName: String = "jiradb"
         private var username: String = "admin"
+        private var plainTextPassword: String = "admin"
 
         fun databaseDelegate(databaseDelegate: Database) = apply { this.databaseDelegate = databaseDelegate }
         fun username(username: String) = apply { this.username = username }
-        fun userPasswordPlainText(userPassword: String) = apply { this.userPasswordPlainText = userPassword }
+        fun plainTextPassword(passwordPlainText: String) = apply { this.plainTextPassword = passwordPlainText }
         fun sqlClient(sqlClient: SshSqlClient) = apply { this.sqlClient = sqlClient }
         fun jiraDatabaseSchemaName(jiraDatabaseSchemaName: String) =
             apply { this.jiraDatabaseSchemaName = jiraDatabaseSchemaName }
@@ -62,7 +62,7 @@ class JiraUserPasswordOverridingDatabase internal constructor(
             databaseDelegate = databaseDelegate,
             sqlClient = sqlClient,
             username = username,
-            plainTextPassword = userPasswordPlainText,
+            plainTextPassword = plainTextPassword,
             passwordEncryption = passwordEncryption,
             jiraDatabaseSchemaName = jiraDatabaseSchemaName
         )
@@ -76,10 +76,8 @@ class JiraUserPasswordOverridingDatabase internal constructor(
  * from the [com.atlassian.crowd.crowd-password-encoders](https://mvnrepository.com/artifact/com.atlassian.crowd/crowd-password-encoders/4.2.2).
  */
 fun Database.overridePassword(
-    adminPasswordPlainText: String,
     passwordEncryption: Function<String, String>
 ): JiraUserPasswordOverridingDatabase.Builder = JiraUserPasswordOverridingDatabase.Builder(
     databaseDelegate = this,
-    userPasswordPlainText = adminPasswordPlainText,
     passwordEncryption = passwordEncryption
 )

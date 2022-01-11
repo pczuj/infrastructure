@@ -27,10 +27,8 @@ class JiraUserPasswordOverridingDatabaseTest {
         underlyingDatabase = RememberingDatabase()
         sshConnection = RememberingSshConnection()
         sqlClient = MockSshSqlClient()
-        database = underlyingDatabase.overridePassword(
-            samplePassword,
-            Function { expectedEncryptedPassword }
-        )
+        database = underlyingDatabase.overridePassword(Function { expectedEncryptedPassword })
+            .plainTextPassword(samplePassword)
             .sqlClient(sqlClient)
             .jiraDatabaseSchemaName("jira")
             .build()
